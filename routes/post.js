@@ -8,6 +8,7 @@ var postSQL = require('../db/postsql');
 var pool = mysql.createPool(dbConfig.mysql);
 
 router.get('/', function (req, res, next) {
+    console.log(req.sessionID)
     pool.getConnection(function (err, connection) {
         connection.query(postSQL.getAllPostsOrderByTime, function (err, result) {
             if (result) {
@@ -19,8 +20,7 @@ router.get('/', function (req, res, next) {
         });
     });
 });
-router.get('/by/:poster', function (req, res, next) {
-    console.log(req)
+router.get('/by/:poster', function (req, res, next) {    
     var poster = req.params.poster
     pool.getConnection(function (err, connection) {
         connection.query(postSQL.allPostsByPoster,[poster], function (err, result) {
@@ -55,10 +55,12 @@ router.post('/newpost', function (req, res, next) {
     });
 });
 router.get('/:pid', function (req, res, next) {
+    console.log(req.sessionID)
     var pid = req.params.pid;
     pool.getConnection(function (err, connection) {
         connection.query(postSQL.getPostByPid,[pid], function (err, result) {
-            if (result) {
+            console.log("result",result)
+            if (result&&result.length>0) {
                 res.json({post:result,code:200,msg:"a post"})
             }else{
                 res.json({code:400,msg:"not found"})

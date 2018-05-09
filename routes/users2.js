@@ -4,7 +4,7 @@ var md5 = require('md5');
 // 验证码
 var svgCaptcha = require('svg-captcha');
 // 文件上传
-var multer  = require('multer');
+var multer = require('multer');
 // var upload = multer({ dest: 'uploadsmmmmmm/' })
 
 // 导入MySQL模块
@@ -19,88 +19,33 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         var thisfileName = ""
-        if(req.session.user) {
+        console.log(req.session)
+        if (req.session.user) {
             // 已登陆
-            thisfileName = req.session.user+ file.originalname
-        }else{
+            console.log("file",file)
+            // 有新的头像则覆盖原有的
+            var imgType = 'png'
+            if(file.mimetype.indexOf("png")){
+                imgType = "png"
+            }else if(file.mimetype.indexOf("jpeg")){
+                imgType = "jpg"
+            }else if(file.mimetype.indexOf("gif")) {
+                imgType = "gif"
+            }
+            thisfileName = req.session.user.uname+'.'+imgType 
+        } else {
             // 未登录
-            thisfileName = "notlogin"+file.originalname
+            thisfileName = "notlogin" + file.originalname
         }
-        cb(null,thisfileName)
+        cb(null, thisfileName)
     }
 })
-var upload = multer({storage: storage})
+var upload = multer({ storage: storage })
 
 
 
 // 使用DBConfig.js的配置信息创建一个MySQL连接池
 var pool = mysql.createPool(dbConfig.mysql);
-// 响应一个JSON数据
-var responseJSON = function (res, ret) {
-    if (typeof ret === 'undefined') {
-        res.json({
-            code: '-200', msg: '操作失败'
-        });
-    } else {
-        res.json(ret);
-    }
-};
-
-
-
-// 添加用户
-router.post('/userAdd', function (req, res, next) {
-    // 从连接池获取连接 
-    pool.getConnection(function (err, connection) {
-        // 获取前台页面传过来的参数  
-        var param = req.body;
-        // 建立连接 增加一个用户信息 
-        connection.query(userSQL.insert, [0, param.uname, param.uage, param.ugender], function (err, result) {
-            console.log(result)
-            if (result) {
-                result = {
-                    code: 200,
-                    msg: '增加成功'
-                };
-            }
-
-            // 以json形式，把操作结果返回给前台页面     
-            responseJSON(res, result);
-
-            // 释放连接  
-            connection.release();
-
-        });
-    });
-});
-
-// 修改用户
-router.post('/userUpdate', function (req, res, next) {
-    // 从连接池获取连接 
-    pool.getConnection(function (err, connection) {
-        // 获取前台页面传过来的参数  
-        var param = req.body;
-        // 建立连接 修改一个用户信息 
-        console.log([param.uname, param.uage, param.ugender, param.uid])
-        connection.query(userSQL.update, [param.uname, param.uage, param.ugender, param.uid], function (err, result) {
-            console.log(result)
-            if (result) {
-                result = {
-                    code: 200,
-                    msg: '修改成功'
-                };
-            }
-
-            // 以json形式，把操作结果返回给前台页面     
-            responseJSON(res, result);
-
-            // 释放连接  
-            connection.release();
-
-        });
-    });
-});
-
 
 // get user by id
 router.get('/userGetById', function (req, res, next) {
@@ -136,7 +81,7 @@ router.post('/userlogin', function (req, res, next) {
                     req.session.user = { uname: uname }
                 }
                 console.log(result)
-                result.password=null
+                result.password = null
                 res.json({ user: result, msg: "found", code: 200 })
             } else {
                 res.json({ code: 404, msg: "not found" })
@@ -176,15 +121,21 @@ router.post('/register', function (req, res, next) {
     });
 });
 
-router.post('/avatarupload',upload.single('avatar'), function(req, res, next){
-    console.log(req.body)
+router.post('/avatarupload', upload.single('avatar'), function (req, res, next) {
+    if(!req.session.user){
+        res.status(401).json({ code: 401, msg: "fail" })
+        return
+    }
     console.log(req.file)
-    var path = req.file.fieldname+'/'+req.file.filename;
+    var path = req.file.fieldname + '/' + req.file.filename;
+    
+    var uname = req.session.user.uname
+    console.log(uname)
     pool.getConnection(function (err, connection) {
-        connection.query(userSQL.updateAvatar, [path,'yangdong'], function (err, result) {
-            console.log(result)
+        connection.query(userSQL.updateAvatar, [path, uname], function (err, result) {
+            // console.log(result)
             if (result) {
-                res.status(200).json({ msg: "success", code: 200 })
+                res.status(200).json({ msg: path, code: 200 })
             } else {
                 res.status(200).json({ code: 400, msg: "fail" })
             }

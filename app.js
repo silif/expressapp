@@ -28,6 +28,7 @@ app.use(cookieParser())
 
 
 app.all('*',function(req,res,next){
+	// 允许来自其他domain的cookie
 	res.header('Access-Control-Allow-Credentials', 'true');
 	res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
 	res.header("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
@@ -42,27 +43,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+
 app.use(session({
-	secret: 'keyboard cat',
+	secret: 'myforum token',
 	resave: false,
 	saveUninitialized: true,
 	cookie: { secure: false ,maxAge: 1 * 60 * 60 * 1000,path: '/'},
 	store: new redisStore({ host: 'localhost', port: 6379, client: client}),
 }))
-
-// 坑爹，只能先实例一个session，才能在router里修改
-app.use(function (req, res, next) {
-	if (!req.session.user) {
-	  req.session.user = {uname:""}
-	}
-	next()
-})
-  
-// app.post('/users2/userlogin', function (req, res, next) {
-// 	req.session.views['time'] = req.session.views['time'] +1
-// 	res.send('you viewed this page ' + req.session.views['time'] + ' times')
-	
-// })
 
 
 app.use('/', indexRouter);

@@ -19,6 +19,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var userRouter2 = require('./routes/users2');
 var postRouter =require('./routes/post')
+var commentsRouter =require('./routes/comments')
 //
 
 // cores header
@@ -57,6 +58,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/users2', userRouter2);
 app.use('/post', postRouter);
+app.use('/comments', commentsRouter);
 
 
 

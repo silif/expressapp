@@ -64,9 +64,31 @@ router.get('/userGetById', function (req, res, next) {
     });
 });
 
+// 判断用户是否登陆
+router.get('/getUserInfo', function(req, res, next) {
+    var user = req.session.user;
+    if(!!user) {
+        var uname = req.session.user.uname;
+        pool.getConnection(function (err, connection) {
+            connection.query(userSQL.getUserInfo, [uname], function (err, result) {
+                console.log(result)
+                res.json({
+                    islogin:true, 
+                    msg:"已登陆",
+                    info:result[0],
+                })
+                connection.release();
+            });
+        })
+    }else{
+        res.json({
+            islogin:false,
+            msg:'未登录'
+        })
+    }
+})
 // login module
 // router users2/userlogin
-
 router.post('/userlogin', function (req, res, next) {
     var password = req.body.password;
     var uname = req.body.username;
@@ -82,7 +104,11 @@ router.post('/userlogin', function (req, res, next) {
                 }
                 console.log(result)
                 result.password = null
-                res.json({ user: result, msg: "found", code: 200 })
+                res.json({ 
+                    islogin:true, 
+                    msg:"已登陆",
+                    info:result[0]
+                 })
             } else {
                 res.json({ code: 404, msg: "not found" })
             }
